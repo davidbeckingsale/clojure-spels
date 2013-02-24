@@ -69,6 +69,55 @@
 (defn have? [object]
   (some #{object} (inventory)))
 
+(def chain-welded false)
+
+(defn weld [subject object]
+  (cond (and (= location 'attic)
+             (= subject 'chain)
+             (= object 'bucket)
+             (have? 'chain)
+             (have? 'bucket)
+             (not chain-welded))
+        (do (def chain-welded true)
+          '(the chain is now securely welded to the bucket -))
+        :else '(you cannot weld like that)))
+
+(def bucket-filled false)
+
+(defn dunk [subject object]
+  (cond (and (= location 'garden)
+             (= subject 'bucket)
+             (= object 'well)
+             (have? 'bucket)
+             chain-welded)
+        (do (def bucket-filled true)
+          '(the bucket is now full of water))
+        :else '(you cannot dunk like that -)))
+
+(defspel game-action [command subj obj place & args]
+         `(defspel ~command [subject# object#]
+                   `(spel-print (cond (and (= location '~'~place)
+                                           (= '~subject# '~'~subj)
+                                           (= '~object# '~'~obj)
+                                           (have '~'~subj))
+                                      ~@'~args
+                                      :else '(i cannot ~'~command like that -)))))
+
+(game-action dunk bucket well garden
+             (cond chain-welded
+                   (do (def bucket-filled true)
+                     '(the bucket is now full of water))
+                   :else '(the water level is too low to reach -)))
+
+(game-action splash bucket wizard living-room
+             (cond (not bucket-filled) '(the bucket has nothing in it -)
+                   (have? 'frog) '(the wizard awakens and sees that you stole his frog -
+                                       he is so upset he banishes you to the netherworlds -
+                                       you lose! the end -)
+                   :else '(the wizard awakens from his slumber and greets you warmly -
+                               he hands you the magic low-carb donut - you win!
+                               the end -)))
+
 (defn -main
   "I don't do a whole lot."
   [& args])
