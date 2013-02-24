@@ -44,6 +44,31 @@
                       (describe-paths location game-map)
                       (describe-floor location objects object-locations))))
 
+(defn walk-direction [direction]
+  (let [next (first (filter (fn [x] (= direction (first x)))
+                            (rest (location game-map))))]
+    (cond next (do (def location (nth next 2)) (look))
+          :else '(you cannot go that way -))))
+
+(defmacro defspel [& rest] `(defmacro ~@rest))
+
+(defspel walk [direction] `(walk-direction '~direction))
+
+(defn pickup-object [object]
+  (cond (is-at? object location object-locations)
+        (do
+          (def object-locations (assoc object-locations object 'body))
+          `(you are now carrying the ~object))
+        :else '(you cannot get that.)))
+
+(defspel pickup [object] `(spel-print (pickup-object '~object))) 
+
+(defn inventory []
+  (filter (fn [x] (is-at? x 'body object-locations)) objects))
+
+(defn have? [object]
+  (some #{object} (inventory)))
+
 (defn -main
   "I don't do a whole lot."
   [& args])
